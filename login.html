@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Pikachuuu Admin Login</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body class="center">
+
+<h2>⚡ Pikachuuu Admin Login ⚡</h2>
+
+<input id="user" placeholder="Username"><br><br>
+<input id="pass" type="password" placeholder="Password"><br><br>
+
+<button onclick="login()">Login</button>
+
+<script>
+function login() {
+  if (
+    document.getElementById("user").value === "swag" &&
+    document.getElementById("pass").value === "sggs"
+  ) {
+    localStorage.setItem("admin", "true");
+    location.href = "index.html";
+  } else {
+    alert("Wrong credentials");
+  }
+}
+</script>
+</body>
+</html>
