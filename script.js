@@ -1,87 +1,156 @@
-const GET_TEAMS =
-  "https://swagserver.co.in/hackfusion/get_all_teams.php";
-const UPDATE_STATUS =
-  "https://swagserver.co.in/hackfusion/update_team_status.php";
+/***********************
+  CONFIG
+************************/
+const API_GET = "https://swagserver.co.in/hackfusion/get_all_teams.php";
+const API_POST = "https://swagserver.co.in/hackfusion/update_team_status.php";
 
-const teamsDiv = document.getElementById("teams");
-const loading = document.getElementById("loading");
+/***********************
+  STATE
+************************/
+let teams = [];
 
-// Fetch all teams
-fetch(GET_TEAMS)
-  .then(res => res.json())
-  .then(data => {
-    loading.style.display = "none";
-    if (data.success) renderTeams(data.data);
-  })
-  .catch(() => {
-    loading.innerText = "❌ Failed to load teams";
-  });
+/***********************
+  INIT
+************************/
+document.addEventListener("DOMContentLoaded", () => {
+  fetchTeams();
+});
 
-function renderTeams(teams) {
-  teamsDiv.innerHTML = "";
+/***********************
+  FETCH TEAMS
+************************/
+function fetchTeams() {
+  fetch(API_GET)
+    .then(res => res.json())
+    .then(data => {
+      teams = data.data || [];
+      updateStats();
+      renderTable(teams);
+    })
+    .catch(err => {
+      console.error("API ERROR:", err);
+      alert("Failed to load teams");
+    });
+}
 
-  teams.forEach(team => {
-    const card = document.createElement("div");
-    card.className = "card";
+/***********************
+  RENDER TABLE
+************************/
+function renderTable(data) {
+  const table = document.getElementById("teamTable");
+  table.innerHTML = "";
 
-    card.innerHTML = `
-      <h3>${team.team_name}</h3>
+  data.forEach(team => {
+    const row = document.createElement("tr");
 
-      <p>
-        <span class="badge">${team.theme}</span>
-        <span class="badge">${team.team_size} Members</span>
-      </p>
+    row.innerHTML = `
+      <td>${team.team_id}</td>
+      <td>${team.college}</td>
 
-      <p><b>College:</b> ${team.college}</p>
-      <p><b>City:</b> ${team.city}</p>
+      <td>
+        <span class="badge ${statusClass(team.registration_status)}">
+          ${team.registration_status || "Pending"}
+        </span>
+      </td>
 
-      <p><b>Members:</b>
-        ${team.members.map(m => m.name).join(", ")}
-      </p>
+      <td>
+        <span class="badge ${statusClass(team.payment_status)}">
+          ${team.payment_status || "Pending"}
+        </span>
+      </td>
 
-      <p>
-        <a href="${team.payment_proof}" target="_blank">
-          ⚡ View Payment Proof
-        </a>
-      </p>
-
-      <select id="status-${team.team_id}">
-        <option value="">Update Status</option>
-        <option>Pending</option>
-        <option>Verified</option>
-        <option>Rejected</option>
-        <option>Completed</option>
-      </select>
-
-      <button onclick="updateStatus(${team.team_id})">
-        Apply
-      </button>
+      <td>
+        <button class="approve">✔</button>
+        <button class="reject">✖</button>
+        <a href="${team.payment_proof}" target="_blank">View</a>
+      </td>
     `;
 
-    teamsDiv.appendChild(card);
+    /* ✅ BUTTON EVENTS (FIXED WAY) */
+    row.querySelector(".approve").addEventListener("click", () => {
+      updateStatus(team.team_id, "payment", "Verified");
+    });
+
+    row.querySelector(".reject").addEventListener("click", () => {
+      updateStatus(team.team_id, "payment", "Rejected");
+    });
+
+    table.appendChild(row);
   });
 }
 
-function updateStatus(teamId) {
-  const status = document.getElementById(
-    `status-${teamId}`
-  ).value;
+/***********************
+  UPDATE STATUS
+************************/
+function updateStatus(teamId, type, status) {
+  console.log("CLICKED:", teamId, type, status);
 
-  if (!status) {
-    alert("Select a status first");
-    return;
-  }
-
-  fetch(UPDATE_STATUS, {
+  fetch(API_POST, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       team_id: teamId,
-      type: "registration",
+      type: type,       // registration OR payment
       status: status
     })
   })
     .then(res => res.json())
-    .then(data => alert(data.message))
-    .catch(() => alert("❌ Update failed"));
+    .then(response => {
+      // Update local data (NO reload)
+      const team = teams.find(t => t.team_id == teamId);
+      if (team) {
+        if (type === "payment") team.payment_status = status;
+        if (type === "registration") team.registration_status = status;
+      }
+
+      updateStats();
+      renderTable(teams);
+
+      alert("⚡ Pikachuuu: " + response.message);
+    })
+    .catch(err => {
+      console.error("UPDATE ERROR:", err);
+      alert("Failed to update status");
+    });
+}
+
+/***********************
+  STATUS COLOR CLASS
+************************/
+function statusClass(status) {
+  if (!status) return "pending";
+
+  status = status.toLowerCase();
+  if (status.includes("verified") || status.includes("completed")) return "verified";
+  if (status.includes("rejected")) return "rejected";
+  return "pending";
+}
+
+/***********************
+  STATS
+************************/
+function updateStats() {
+  const total = teams.length;
+  const verified = teams.filter(t => t.payment_status === "Verified").length;
+  const pending = teams.filter(t => !t.payment_status || t.payment_status === "Pending").length;
+
+  document.getElementById("totalTeams").innerText = total;
+  document.getElementById("verifiedTeams").innerText = verified;
+  document.getElementById("pendingTeams").innerText = pending;
+}
+
+/***********************
+  FILTER (OPTIONAL)
+************************/
+function filterByStatus(status) {
+  if (status === "all") {
+    renderTable(teams);
+  } else {
+    renderTable(
+      teams.filter(t =>
+        t.registration_status === status ||
+        t.payment_status === status
+      )
+    );
+  }
 }
