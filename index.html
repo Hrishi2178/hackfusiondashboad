@@ -1,60 +1,46 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>Pikachuuu Admin</title>
-  <link rel="stylesheet" href="style.css">
-</head>
-<body>
+  <head>
+    <meta charset="UTF-8" />
+    <title>Pikachuuu Admin</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <div class="app">
+      <!-- MAIN -->
+      <main class="main">
+        <header class="topbar">
+          <h1>Admin Dashboard</h1>
+          <span class="tag">LIVE</span>
+        </header>
 
-<div class="app">
+        <!-- STATS -->
+        <section class="stats">
+          <div class="card stats-row">
+            <div class="stats-row">👥 Total Registered: <span id="totalUsers">0</span></div>
+            <div class="stats-row">💳 Paid Users: <span id="paidUsers">0</span></div>
+            <div class="stats-row">✅ Registration Verified: <span id="regVerified">0</span></div>
+          </div>
+        </section>
+        
 
-  <!-- SIDEBAR -->
-  <aside class="sidebar">
-    <h3><B>⚡  HACKFUSION 3  ⚡</B></h3></h3>
-    <p>Hackathon Admin</p>
-  </aside>
+        <!-- TABLE -->
+        <section class="table-card">
+          <table>
+            <thead>
+              <tr>
+                <th>Team Name</th>
+                <th>Payment ScreenShot</th>
+                <th>Registration</th>
+                <!-- <th>Actions</th> -->
+              </tr>
+            </thead>
+            <tbody id="teamTable"></tbody>
+          </table>
+        </section>
+      </main>
+    </div>
 
-  <!-- MAIN -->
-  <main class="main">
-
-    <header class="topbar">
-      <h1>Admin Dashboard</h1>
-      <span class="tag">LIVE</span>
-    </header>
-
-    <!-- STATS -->
-    <section class="stats">
-         <div class="card">👥 
-  Total Registered: <span id="totalUsers">0</span> |
-  Paid Users: <span id="paidUsers">0</span> |
-  Registration Verified: <span id="regVerified">0</span>
-</div>
-      
-    </section>
-
-
-    <!-- TABLE -->
-    <section class="table-card">
-   
-      <table>
-        <thead>
-          <tr>
-            <th>Team</th>
-            <th>College</th>
-            
-            <th>Payment SCREENSHOT</th>
-            <th>Registration</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody id="teamTable"></tbody>
-      </table>
-    </section>
-
-  </main>
-</div>
-
-<script src="script.js"></script>
-</body>
+    <script src="script.js"></script>
+  </body>
 </html>

@@ -198,3 +198,23 @@ button {
   margin-top: 15px;
   color: #555;
 }
+
+.stats-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 24px; /* responsive */
+}
+
+.stats-row div {
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+/* Mobile friendly */
+@media (max-width: 600px) {
+  .stats-row {
+    justify-content: center;
+    gap: 12px;
+  }
+}
