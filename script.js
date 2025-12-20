@@ -59,14 +59,41 @@ function renderTable(data) {
         </span>
       </td>
 
+      <!-- 📄 ABSTRACT -->
+      <td>
+        ${
+          team.abstract_url
+            ? `<a class="doc-btn" href="${team.abstract_url}" target="_blank">Abstract</a>`
+            : `<span class="doc-missing">No Abstract</span>`
+        }
+      </td>
+
+      <!-- 📊 PPT -->
+      <td>
+        ${
+          team.ppt_url
+            ? `<a class="doc-btn" href="${team.ppt_url}" target="_blank">PPT</a>`
+            : `<span class="doc-missing">No PPT</span>`
+        }
+      </td>
+
+      <!-- 💳 PAYMENT -->
+      <td>
+        ${
+          team.payment_proof
+            ? `<a class="doc-btn" href="${team.payment_proof}" target="_blank">Payment</a>`
+            : `<span class="doc-missing">No Proof</span>`
+        }
+      </td>
+
+      <!-- ACTIONS -->
       <td>
         <button class="approve">✔</button>
         <button class="reject">✖</button>
-        <a href="${team.payment_proof}" target="_blank">View</a>
       </td>
     `;
 
-    /* ✅ BUTTON EVENTS (FIXED WAY) */
+    /* ✅ BUTTON EVENTS */
     row.querySelector(".approve").addEventListener("click", () => {
       updateStatus(team.team_id, "payment", "Verified");
     });
@@ -83,20 +110,17 @@ function renderTable(data) {
   UPDATE STATUS
 ************************/
 function updateStatus(teamId, type, status) {
-  console.log("CLICKED:", teamId, type, status);
-
   fetch(API_POST, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       team_id: teamId,
-      type: type,       // registration OR payment
+      type: type,
       status: status
     })
   })
     .then(res => res.json())
     .then(response => {
-      // Update local data (NO reload)
       const team = teams.find(t => t.team_id == teamId);
       if (team) {
         if (type === "payment") team.payment_status = status;
@@ -115,7 +139,7 @@ function updateStatus(teamId, type, status) {
 }
 
 /***********************
-  STATUS COLOR CLASS
+  STATUS CLASS
 ************************/
 function statusClass(status) {
   if (!status) return "pending";
@@ -130,27 +154,22 @@ function statusClass(status) {
   STATS
 ************************/
 function updateStats() {
-  const total = teams.length;
-  const verified = teams.filter(t => t.payment_status === "Verified").length;
-  const pending = teams.filter(t => !t.payment_status || t.payment_status === "Pending").length;
-
-  document.getElementById("totalTeams").innerText = total;
-  document.getElementById("verifiedTeams").innerText = verified;
-  document.getElementById("pendingTeams").innerText = pending;
+  document.getElementById("totalTeams").innerText = teams.length;
+  document.getElementById("verifiedTeams").innerText =
+    teams.filter(t => t.payment_status === "Verified").length;
+  document.getElementById("pendingTeams").innerText =
+    teams.filter(t => !t.payment_status || t.payment_status === "Pending").length;
 }
 
 /***********************
   FILTER (OPTIONAL)
 ************************/
 function filterByStatus(status) {
-  if (status === "all") {
-    renderTable(teams);
-  } else {
+  if (status === "all") renderTable(teams);
+  else
     renderTable(
-      teams.filter(t =>
-        t.registration_status === status ||
-        t.payment_status === status
+      teams.filter(
+        t => t.registration_status === status || t.payment_status === status
       )
     );
-  }
 }
