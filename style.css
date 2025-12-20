@@ -174,3 +174,27 @@ button {
   from { opacity: 0; transform: translateY(-10px); }
   to { opacity: 1; transform: translateY(0); }
 }
+.status.verified { color: green; font-weight: bold; }
+.status.rejected { color: red; font-weight: bold; }
+.status.pending { color: orange; }
+
+.btn { margin: 4px; padding: 6px 10px; border-radius: 6px; }
+.btn.danger { background: #ff4d4d; color: white; }
+.btn.info { background: #4da6ff; color: white; }
+
+.details-card {
+  background: #958709;
+  padding: 15px;
+  border-radius: 12px;
+    margin-top: 10px;
+}
+
+.details-card h3 {
+  margin-bottom: 10px;
+  color: #333;
+}
+
+.details-card h4 {
+  margin-top: 15px;
+  color: #555;
+}
