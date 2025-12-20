@@ -15,6 +15,7 @@ function fetchTeams() {
       renderTable();
     })
     .catch(err => console.error("Fetch error:", err));
+    console.log("RAW API DATA:", data.data);
 }
 
 /**************** RENDER TABLE ****************/
@@ -41,7 +42,9 @@ function renderTable() {
       <!-- REGISTRATION -->
       <td>
         ${
-          team.payment_status === "Verified"
+          ["verified", "paid", "success"].includes(
+  (team.payment_status || "").toLowerCase()
+)
             ? `<button class="btn reg-btn">Registration</button>`
             : `<span class="locked">Locked</span>`
         }
@@ -78,14 +81,24 @@ function openPayment(team) {
 
 /**************** REGISTRATION DETAILS ****************/
 function toggleRegistration(row, team) {
-  // Close if already open
   if (row.nextSibling && row.nextSibling.classList?.contains("details-row")) {
     row.nextSibling.remove();
     return;
   }
 
-  // Close other open rows
   document.querySelectorAll(".details-row").forEach(r => r.remove());
+
+  const members = [];
+
+  for (let i = 1; i <= 6; i++) {
+    if (team[`member${i}_name`]) {
+      members.push({
+        name: team[`member${i}_name`],
+        gender: team[`member${i}_gender`],
+        pwd: team[`member${i}_pwd`]
+      });
+    }
+  }
 
   const detailsRow = document.createElement("tr");
   detailsRow.className = "details-row";
@@ -93,36 +106,32 @@ function toggleRegistration(row, team) {
   detailsRow.innerHTML = `
     <td colspan="4">
       <div class="details-card">
-        <h3>Team ${team.team_id} — ${team.college}</h3>
+        <h3>Team ${team.team_id}</h3>
 
-        <div class="section">
-          <h4>Team Leader</h4>
-          <p><b>Name:</b> ${team.leader_name}</p>
-          <p><b>Gender:</b> ${team.leader_gender}</p>
-          <p><b>PWD:</b> ${team.leader_pwd}</p>
-          <p><b>Email:</b> ${team.email || "N/A"}</p>
-          <p><b>Phone:</b> ${team.phone || "N/A"}</p>
-        </div>
+        <h4>Leader</h4>
+        <p>Name: ${team.leader_name}</p>
+        <p>Gender: ${team.leader_gender}</p>
+        <p>PWD: ${team.leader_pwd}</p>
 
-        <div class="section">
-          <h4>Team Members</h4>
-          ${
-            team.members && team.members.length
-              ? team.members.map((m, i) => `
-                  <div class="member">
-                    <b>Member ${i + 1}</b> — 
-                    ${m.name}, ${m.gender}, PWD: ${m.pwd}
-                  </div>
-                `).join("")
-              : "<p>No members data</p>"
-          }
-        </div>
+        <h4>Members</h4>
+        ${
+          members.length
+            ? members.map((m, i) => `
+                <p>
+                  Member ${i + 1}: ${m.name} |
+                  ${m.gender} |
+                  PWD: ${m.pwd}
+                </p>
+              `).join("")
+            : "<p>No members submitted</p>"
+        }
       </div>
     </td>
   `;
 
   row.after(detailsRow);
 }
+
 
 /**************** UPDATE STATUS ****************/
 function updateStatus(teamId, type, status) {
