@@ -114,3 +114,19 @@ button {
 
 .approve { background:#00e676; }
 .reject { background:#f44336; color:white; }
+.doc-btn {
+  background: #ffcc00;
+  color: black;
+  padding: 5px 10px;
+  border-radius: 8px;
+  text-decoration: none;
+  font-weight: bold;
+  font-size: 12px;
+}
+
+.doc-missing {
+  color: #888;
+  font-size: 12px;
+}
+
+
