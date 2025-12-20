@@ -130,3 +130,47 @@ button {
 }
 
 
+.disabled {
+  color: gray;
+  font-size: 12px;
+}
+
+.details-box {
+  background: #fff3cd;
+  padding: 15px;
+  border-radius: 12px;
+}
+.btn {
+  background: linear-gradient(135deg, #ffcc00, #ff9900);
+  border: none;
+  padding: 8px 14px;
+  border-radius: 10px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.locked {
+  color: #999;
+  font-size: 12px;
+}
+
+.details-card {
+  background: #fffbea;
+  padding: 20px;
+  border-radius: 14px;
+  animation: slideDown 0.3s ease;
+}
+
+.section {
+  margin-top: 15px;
+}
+
+.member {
+  padding-left: 10px;
+  margin: 6px 0;
+}
+
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
