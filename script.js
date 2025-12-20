@@ -1,175 +1,137 @@
-/***********************
-  CONFIG
-************************/
+/**************** CONFIG ****************/
 const API_GET = "https://swagserver.co.in/hackfusion/get_all_teams.php";
 const API_POST = "https://swagserver.co.in/hackfusion/update_team_status.php";
 
-/***********************
-  STATE
-************************/
 let teams = [];
 
-/***********************
-  INIT
-************************/
-document.addEventListener("DOMContentLoaded", () => {
-  fetchTeams();
-});
+document.addEventListener("DOMContentLoaded", fetchTeams);
 
-/***********************
-  FETCH TEAMS
-************************/
+/**************** FETCH ****************/
 function fetchTeams() {
   fetch(API_GET)
     .then(res => res.json())
     .then(data => {
       teams = data.data || [];
-      updateStats();
-      renderTable(teams);
+      renderTable();
     })
-    .catch(err => {
-      console.error("API ERROR:", err);
-      alert("Failed to load teams");
-    });
+    .catch(err => console.error("Fetch error:", err));
 }
 
-/***********************
-  RENDER TABLE
-************************/
-function renderTable(data) {
+/**************** RENDER TABLE ****************/
+function renderTable() {
   const table = document.getElementById("teamTable");
   table.innerHTML = "";
 
-  data.forEach(team => {
-    const row = document.createElement("tr");
+  teams.forEach(team => {
+    const tr = document.createElement("tr");
 
-    row.innerHTML = `
+    tr.innerHTML = `
       <td>${team.team_id}</td>
       <td>${team.college}</td>
 
-      <td>
-        <span class="badge ${statusClass(team.registration_status)}">
-          ${team.registration_status || "Pending"}
-        </span>
-      </td>
-
-      <td>
-        <span class="badge ${statusClass(team.payment_status)}">
-          ${team.payment_status || "Pending"}
-        </span>
-      </td>
-
-      <!-- 📄 ABSTRACT -->
-      <td>
-        ${
-          team.abstract_url
-            ? `<a class="doc-btn" href="${team.abstract_url}" target="_blank">Abstract</a>`
-            : `<span class="doc-missing">No Abstract</span>`
-        }
-      </td>
-
-      <!-- 📊 PPT -->
-      <td>
-        ${
-          team.ppt_url
-            ? `<a class="doc-btn" href="${team.ppt_url}" target="_blank">PPT</a>`
-            : `<span class="doc-missing">No PPT</span>`
-        }
-      </td>
-
-      <!-- 💳 PAYMENT -->
+      <!-- PAYMENT -->
       <td>
         ${
           team.payment_proof
-            ? `<a class="doc-btn" href="${team.payment_proof}" target="_blank">Payment</a>`
-            : `<span class="doc-missing">No Proof</span>`
+            ? `<button class="btn payment-btn">Payment</button>`
+            : `<span class="locked">No Payment</span>`
         }
       </td>
 
-      <!-- ACTIONS -->
+      <!-- REGISTRATION -->
       <td>
-        <button class="approve">✔</button>
-        <button class="reject">✖</button>
+        ${
+          team.payment_status === "Verified"
+            ? `<button class="btn reg-btn">Registration</button>`
+            : `<span class="locked">Locked</span>`
+        }
       </td>
     `;
 
-    /* ✅ BUTTON EVENTS */
-    row.querySelector(".approve").addEventListener("click", () => {
-      updateStatus(team.team_id, "payment", "Verified");
-    });
+    /* PAYMENT CLICK */
+    if (team.payment_proof) {
+      tr.querySelector(".payment-btn")
+        .addEventListener("click", () => openPayment(team));
+    }
 
-    row.querySelector(".reject").addEventListener("click", () => {
-      updateStatus(team.team_id, "payment", "Rejected");
-    });
+    /* REGISTRATION CLICK */
+    if (team.payment_status === "Verified") {
+      tr.querySelector(".reg-btn")
+        .addEventListener("click", () => toggleRegistration(tr, team));
+    }
 
-    table.appendChild(row);
+    table.appendChild(tr);
   });
 }
 
-/***********************
-  UPDATE STATUS
-************************/
+/**************** PAYMENT ****************/
+function openPayment(team) {
+  window.open(team.payment_proof, "_blank");
+
+  if (team.payment_status !== "Verified") {
+    const confirmVerify = confirm("Mark this payment as VERIFIED?");
+    if (confirmVerify) {
+      updateStatus(team.team_id, "payment", "Verified");
+    }
+  }
+}
+
+/**************** REGISTRATION DETAILS ****************/
+function toggleRegistration(row, team) {
+  // Close if already open
+  if (row.nextSibling && row.nextSibling.classList?.contains("details-row")) {
+    row.nextSibling.remove();
+    return;
+  }
+
+  // Close other open rows
+  document.querySelectorAll(".details-row").forEach(r => r.remove());
+
+  const detailsRow = document.createElement("tr");
+  detailsRow.className = "details-row";
+
+  detailsRow.innerHTML = `
+    <td colspan="4">
+      <div class="details-card">
+        <h3>Team ${team.team_id} — ${team.college}</h3>
+
+        <div class="section">
+          <h4>Team Leader</h4>
+          <p><b>Name:</b> ${team.leader_name}</p>
+          <p><b>Gender:</b> ${team.leader_gender}</p>
+          <p><b>PWD:</b> ${team.leader_pwd}</p>
+          <p><b>Email:</b> ${team.email || "N/A"}</p>
+          <p><b>Phone:</b> ${team.phone || "N/A"}</p>
+        </div>
+
+        <div class="section">
+          <h4>Team Members</h4>
+          ${
+            team.members && team.members.length
+              ? team.members.map((m, i) => `
+                  <div class="member">
+                    <b>Member ${i + 1}</b> — 
+                    ${m.name}, ${m.gender}, PWD: ${m.pwd}
+                  </div>
+                `).join("")
+              : "<p>No members data</p>"
+          }
+        </div>
+      </div>
+    </td>
+  `;
+
+  row.after(detailsRow);
+}
+
+/**************** UPDATE STATUS ****************/
 function updateStatus(teamId, type, status) {
   fetch(API_POST, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      team_id: teamId,
-      type: type,
-      status: status
-    })
+    body: JSON.stringify({ team_id: teamId, type, status })
   })
     .then(res => res.json())
-    .then(response => {
-      const team = teams.find(t => t.team_id == teamId);
-      if (team) {
-        if (type === "payment") team.payment_status = status;
-        if (type === "registration") team.registration_status = status;
-      }
-
-      updateStats();
-      renderTable(teams);
-
-      alert("⚡ Pikachuuu: " + response.message);
-    })
-    .catch(err => {
-      console.error("UPDATE ERROR:", err);
-      alert("Failed to update status");
-    });
-}
-
-/***********************
-  STATUS CLASS
-************************/
-function statusClass(status) {
-  if (!status) return "pending";
-
-  status = status.toLowerCase();
-  if (status.includes("verified") || status.includes("completed")) return "verified";
-  if (status.includes("rejected")) return "rejected";
-  return "pending";
-}
-
-/***********************
-  STATS
-************************/
-function updateStats() {
-  document.getElementById("totalTeams").innerText = teams.length;
-  document.getElementById("verifiedTeams").innerText =
-    teams.filter(t => t.payment_status === "Verified").length;
-  document.getElementById("pendingTeams").innerText =
-    teams.filter(t => !t.payment_status || t.payment_status === "Pending").length;
-}
-
-/***********************
-  FILTER (OPTIONAL)
-************************/
-function filterByStatus(status) {
-  if (status === "all") renderTable(teams);
-  else
-    renderTable(
-      teams.filter(
-        t => t.registration_status === status || t.payment_status === status
-      )
-    );
+    .then(() => fetchTeams())
+    .catch(err => console.error("Update error:", err));
 }
