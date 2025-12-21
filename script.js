@@ -192,29 +192,39 @@ function openPaymentDialog(user) {
   document.body.appendChild(dialog);
   
   // Event listeners
-  dialog.querySelector(".dialog-close").addEventListener("click", () => closeDialog("paymentDialog"));
-  dialog.querySelector(".btn-cancel").addEventListener("click", () => closeDialog("paymentDialog"));
-  dialog.querySelector(".dialog-overlay").addEventListener("click", (e) => {
+  const closeBtn = dialog.querySelector(".dialog-close");
+  const cancelBtn = dialog.querySelector(".btn-cancel");
+  const verifyBtn = dialog.querySelector(".btn-verify");
+  const rejectBtn = dialog.querySelector(".btn-reject");
+  
+  closeBtn.addEventListener("click", () => closeDialog("paymentDialog"));
+  cancelBtn.addEventListener("click", () => closeDialog("paymentDialog"));
+  
+  dialog.addEventListener("click", (e) => {
     if (e.target.classList.contains("dialog-overlay")) {
       closeDialog("paymentDialog");
     }
   });
   
-  dialog.querySelector(".btn-verify").addEventListener("click", (e) => {
-    if (!e.target.disabled) {
-      closeDialog("paymentDialog");
-      updateStatus(user.team_id, "payment", "Verified");
-    }
-  });
-  
-  dialog.querySelector(".btn-reject").addEventListener("click", (e) => {
-    if (!e.target.disabled) {
-      if (confirm(`Are you sure you want to reject payment for ${user.team_name}?`)) {
+  if (verifyBtn) {
+    verifyBtn.addEventListener("click", () => {
+      if (!verifyBtn.disabled) {
         closeDialog("paymentDialog");
-        updateStatus(user.team_id, "payment", "Rejected");
+        updateStatus(user.team_id, "payment", "Verified");
       }
-    }
-  });
+    });
+  }
+  
+  if (rejectBtn) {
+    rejectBtn.addEventListener("click", () => {
+      if (!rejectBtn.disabled) {
+        if (confirm(`Are you sure you want to reject payment for ${user.team_name}?`)) {
+          closeDialog("paymentDialog");
+          updateStatus(user.team_id, "payment", "Rejected");
+        }
+      }
+    });
+  }
   
   // Allow image click to open in new tab
   const img = dialog.querySelector(".payment-image");
@@ -258,37 +268,22 @@ function openRegistrationDialog(user) {
       </div>
       
       <div class="dialog-body">
+        <div class="dialog-info">
+          <h3>${user.team_name || "Unnamed Team"}</h3>
+          <p><strong>Team ID:</strong> ${user.team_id}</p>
+          <p><strong>College:</strong> ${user.college || "N/A"}</p>
+          <p><strong>City:</strong> ${user.city || "N/A"}</p>
+          <p><strong>Theme:</strong> ${user.theme || "N/A"}</p>
+          <p><strong>Team Size:</strong> ${user.team_size || members.length}</p>
+          <p><strong>Current Status:</strong> <span class="status-badge ${registrationStatusClass}">${user.registration_status || "Pending"}</span></p>
+        </div>
         
-    <div class="info-section">
-      <h4>Team Information</h4>
-      <table class="info-table">
-        <tr>
-          <td class="info-label">Team Name</td>
-          <td class="info-value">${user.team_name || "Unnamed Team"}</td>
-          <td class="info-label">Team ID</td>
-          <td class="info-value">${user.team_id}</td>
-        </tr>
-        <tr>
-          <td class="info-label">Theme</td>
-          <td class="info-value">${user.theme || "N/A"}</td>
-          <td class="info-label">Team Size</td>
-          <td class="info-value">${user.team_size || members.length}</td>
-        </tr>
-        <tr>
-          <td class="info-label">College</td>
-          <td class="info-value">${user.college || "N/A"}</td>
-          <td class="info-label">City</td>
-          <td class="info-value">${user.city || "N/A"}</td>
-        </tr>
-        <tr>
-          <td class="info-label">Coupon</td>
-          <td class="info-value">${user.coupon || "None"}</td>
-          <td class="info-label">Created</td>
-          <td class="info-value">${user.created_at || "N/A"}</td>
-        </tr>
-      </table>
-    </div>
-  
+        <div class="dialog-members">
+          <h4>Team Members</h4>
+          <ul class="members-list">
+            ${membersList}
+          </ul>
+        </div>
         
         <div class="dialog-abstract">
           <h4>Project Abstract</h4>
@@ -313,29 +308,39 @@ function openRegistrationDialog(user) {
   document.body.appendChild(dialog);
   
   // Event listeners
-  dialog.querySelector(".dialog-close").addEventListener("click", () => closeDialog("registrationDialog"));
-  dialog.querySelector(".btn-cancel").addEventListener("click", () => closeDialog("registrationDialog"));
-  dialog.querySelector(".dialog-overlay").addEventListener("click", (e) => {
+  const closeBtn = dialog.querySelector(".dialog-close");
+  const cancelBtn = dialog.querySelector(".btn-cancel");
+  const verifyBtn = dialog.querySelector(".btn-verify");
+  const rejectBtn = dialog.querySelector(".btn-reject");
+  
+  closeBtn.addEventListener("click", () => closeDialog("registrationDialog"));
+  cancelBtn.addEventListener("click", () => closeDialog("registrationDialog"));
+  
+  dialog.addEventListener("click", (e) => {
     if (e.target.classList.contains("dialog-overlay")) {
       closeDialog("registrationDialog");
     }
   });
   
-  dialog.querySelector(".btn-verify").addEventListener("click", (e) => {
-    if (!e.target.disabled) {
-      closeDialog("registrationDialog");
-      updateStatus(user.team_id, "registration", "Completed");
-    }
-  });
-  
-  dialog.querySelector(".btn-reject").addEventListener("click", (e) => {
-    if (!e.target.disabled) {
-      if (confirm(`Are you sure you want to reject registration for ${user.team_name}?`)) {
+  if (verifyBtn) {
+    verifyBtn.addEventListener("click", () => {
+      if (!verifyBtn.disabled) {
         closeDialog("registrationDialog");
-        updateStatus(user.team_id, "registration", "Rejected");
+        updateStatus(user.team_id, "registration", "Completed");
       }
-    }
-  });
+    });
+  }
+  
+  if (rejectBtn) {
+    rejectBtn.addEventListener("click", () => {
+      if (!rejectBtn.disabled) {
+        if (confirm(`Are you sure you want to reject registration for ${user.team_name}?`)) {
+          closeDialog("registrationDialog");
+          updateStatus(user.team_id, "registration", "Rejected");
+        }
+      }
+    });
+  }
 }
 
 /* ================= CLOSE DIALOG ================= */
