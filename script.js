@@ -12,13 +12,13 @@ document.addEventListener("DOMContentLoaded", () => {
 
 function loadUsers() {
   fetch(API_GET)
-    .then(res => res.json())
-    .then(data => {
+    .then((res) => res.json())
+    .then((data) => {
       users = data.data || [];
       updateCounters(users);
       renderTable(users);
     })
-    .catch(err => {
+    .catch((err) => {
       console.error("Error loading users:", err);
       alert("Failed to load teams. Please refresh the page.");
     });
@@ -29,21 +29,39 @@ function loadUsers() {
 function updateCounters(list) {
   document.getElementById("totalUsers").innerText = list.length;
 
-  document.getElementById("paidUsers").innerText =
-    list.filter(u => (u.payment_status || "").toLowerCase() === "verified").length;
+  document.getElementById("paidUsers").innerText = list.filter(
+    (u) => (u.payment_status || "").toLowerCase() === "verified"
+  ).length;
 
-  document.getElementById("regVerified").innerText =
-    list.filter(u => (u.registration_status || "").toLowerCase() === "completed").length;
+  document.getElementById("regVerified").innerText = list.filter(
+    (u) => (u.registration_status || "").toLowerCase() === "completed"
+  ).length;
+
+  // Count all-girl teams
+  const allGirlTeams = list.filter((u) => {
+    const members = u.members || [];
+    return members.length > 0 && members.every((m) => (m.gender || "") === "F");
+  }).length;
+  document.getElementById("allGirlTeams").innerText = allGirlTeams;
+
+  // Count PWD teams (minimum 2 PWD members)
+  const pwdTeams = list.filter((u) => {
+    const members = u.members || [];
+    const pwdCount = members.filter((m) => m.is_pwd === 1).length;
+    return pwdCount >= 2;
+  }).length;
+  document.getElementById("pwdTeams").innerText = pwdTeams;
 }
 
 /* ================= SEARCH ================= */
 
 function searchUsers(e) {
   const q = e.target.value.toLowerCase();
-  const filtered = users.filter(u =>
-    u.college.toLowerCase().includes(q) ||
-    String(u.team_id).includes(q) ||
-    u.team_name.toLowerCase().includes(q)
+  const filtered = users.filter(
+    (u) =>
+      u.college.toLowerCase().includes(q) ||
+      String(u.team_id).includes(q) ||
+      u.team_name.toLowerCase().includes(q)
   );
   updateCounters(filtered);
   renderTable(filtered);
@@ -55,26 +73,56 @@ function renderTable(list) {
   const table = document.getElementById("teamTable");
   table.innerHTML = "";
 
-  list.forEach(user => {
+  list.forEach((user) => {
     const tr = document.createElement("tr");
 
     // Get payment status class for styling
     const paymentStatusClass = getStatusClass(user.payment_status);
     const registrationStatusClass = getStatusClass(user.registration_status);
 
+    const members = user.members || [];
+
+    // All-girl team
+    const isAllGirl =
+      members.length > 0 &&
+      members.every((m) => (m.gender || "").toUpperCase() === "F");
+
+    // PWD team (>= 2 PWD members)
+    const pwdCount = members.filter((m) => m.is_pwd === 1).length;
+    const isPWD = pwdCount >= 2;
+
+    // Build badge HTML
+    let teamBadges = "";
+    if (isAllGirl) {
+      teamBadges += `<span class="team-badge badge-girl">👩 All-Girl</span>`;
+    }
+    if (isPWD) {
+      teamBadges += `<span class="team-badge badge-pwd">♿ PWD</span>`;
+    }
+
     tr.innerHTML = `
       <td>
-        <b>${user.team_name || "Unnamed Team"}</b><br>
+        <div class="team-header">
+          <b class="team-name">${user.team_name || "Unnamed Team"}</b>
+          ${teamBadges ? `<div class="badge-wrap">${teamBadges}</div>` : ""}
+        </div>
         <small>${user.college}</small><br>
         <small>ID: ${user.team_id}</small>
       </td>
+
+
       
       <td>
         <button class="btn view-pay">View screenshot</button><br>
-        ${user.payment_status === "Verified" || user.payment_status === "Rejected" ? "" : `
+        ${
+          user.payment_status === "Verified" ||
+          user.payment_status === "Rejected"
+            ? ""
+            : `
           <button class="btn pay-verify">Verify</button>
           <button class="btn danger pay-reject">Reject</button>
-        `}
+        `
+        }
         <div class="status-badge ${paymentStatusClass}">
           Status: ${user.payment_status || "Pending"}
         </div>
@@ -82,10 +130,15 @@ function renderTable(list) {
 
       <td>
         <button class="btn reg-view">View the details</button><br>
-        ${user.registration_status === "Completed" || user.registration_status === "Rejected" ? "" : `
+        ${
+          user.registration_status === "Completed" ||
+          user.registration_status === "Rejected"
+            ? ""
+            : `
           <button class="btn reg-verify">Complete</button>
           <button class="btn danger reg-reject">Reject</button>
-        `}
+        `
+        }
         <div class="status-badge ${registrationStatusClass}">
           Status: ${user.registration_status || "Pending"}
         </div>
@@ -93,35 +146,39 @@ function renderTable(list) {
     `;
 
     /* ✅ PAYMENT EVENTS */
-    tr.querySelector(".view-pay")
-      .addEventListener("click", () => openPaymentDialog(user));
+    tr.querySelector(".view-pay").addEventListener("click", () =>
+      openPaymentDialog(user)
+    );
 
     const payVerifyBtn = tr.querySelector(".pay-verify");
     const payRejectBtn = tr.querySelector(".pay-reject");
-    
+
     if (payVerifyBtn) {
       payVerifyBtn.addEventListener("click", () => openPaymentDialog(user));
     }
-    
+
     if (payRejectBtn) {
       payRejectBtn.addEventListener("click", () => openPaymentDialog(user));
     }
 
     /* ✅ REGISTRATION EVENTS */
-    tr.querySelector(".reg-view")
-      .addEventListener("click", () =>
-        viewRegistration(tr, user.team_id)
-      );
+    tr.querySelector(".reg-view").addEventListener("click", () =>
+      viewRegistration(tr, user.team_id)
+    );
 
     const regVerifyBtn = tr.querySelector(".reg-verify");
     const regRejectBtn = tr.querySelector(".reg-reject");
-    
+
     if (regVerifyBtn) {
-      regVerifyBtn.addEventListener("click", () => openRegistrationDialog(user));
+      regVerifyBtn.addEventListener("click", () =>
+        openRegistrationDialog(user)
+      );
     }
-    
+
     if (regRejectBtn) {
-      regRejectBtn.addEventListener("click", () => openRegistrationDialog(user));
+      regRejectBtn.addEventListener("click", () =>
+        openRegistrationDialog(user)
+      );
     }
 
     table.appendChild(tr);
@@ -148,9 +205,9 @@ function openPaymentDialog(user) {
   const dialog = document.createElement("div");
   dialog.className = "dialog-overlay";
   dialog.id = "paymentDialog";
-  
+
   const paymentStatusClass = getStatusClass(user.payment_status);
-  
+
   dialog.innerHTML = `
     <div class="dialog-content">
       <div class="dialog-header">
@@ -165,47 +222,54 @@ function openPaymentDialog(user) {
           <p><strong>College:</strong> ${user.college || "N/A"}</p>
           <p><strong>City:</strong> ${user.city || "N/A"}</p>
           <p><strong>Coupon:</strong> ${user.coupon || "None"}</p>
-          <p><strong>Current Status:</strong> <span class="status-badge ${paymentStatusClass}">${user.payment_status || "Pending"}</span></p>
+          <p><strong>Current Status:</strong> <span class="status-badge ${paymentStatusClass}">${
+    user.payment_status || "Pending"
+  }</span></p>
         </div>
         
         <div class="dialog-screenshot">
           <h4>Payment Screenshot</h4>
-          ${user.payment_proof ? 
-            `<img src="${user.payment_proof}" alt="Payment Proof" class="payment-image" />` :
-            `<p class="no-data">No payment screenshot uploaded</p>`
+          ${
+            user.payment_proof
+              ? `<img src="${user.payment_proof}" alt="Payment Proof" class="payment-image" />`
+              : `<p class="no-data">No payment screenshot uploaded</p>`
           }
         </div>
       </div>
       
       <div class="dialog-footer">
-        <button class="btn-dialog btn-verify" ${user.payment_status === "Verified" ? "disabled" : ""}>
+        <button class="btn-dialog btn-verify" ${
+          user.payment_status === "Verified" ? "disabled" : ""
+        }>
           ✓ Verify Payment
         </button>
-        <button class="btn-dialog btn-reject" ${user.payment_status === "Rejected" ? "disabled" : ""}>
+        <button class="btn-dialog btn-reject" ${
+          user.payment_status === "Rejected" ? "disabled" : ""
+        }>
           ✗ Reject Payment
         </button>
         <button class="btn-dialog btn-cancel">Cancel</button>
       </div>
     </div>
   `;
-  
+
   document.body.appendChild(dialog);
-  
+
   // Event listeners
   const closeBtn = dialog.querySelector(".dialog-close");
   const cancelBtn = dialog.querySelector(".btn-cancel");
   const verifyBtn = dialog.querySelector(".btn-verify");
   const rejectBtn = dialog.querySelector(".btn-reject");
-  
+
   closeBtn.addEventListener("click", () => closeDialog("paymentDialog"));
   cancelBtn.addEventListener("click", () => closeDialog("paymentDialog"));
-  
+
   dialog.addEventListener("click", (e) => {
     if (e.target.classList.contains("dialog-overlay")) {
       closeDialog("paymentDialog");
     }
   });
-  
+
   if (verifyBtn) {
     verifyBtn.addEventListener("click", () => {
       if (!verifyBtn.disabled) {
@@ -214,23 +278,29 @@ function openPaymentDialog(user) {
       }
     });
   }
-  
+
   if (rejectBtn) {
     rejectBtn.addEventListener("click", () => {
       if (!rejectBtn.disabled) {
-        if (confirm(`Are you sure you want to reject payment for ${user.team_name}?`)) {
+        if (
+          confirm(
+            `Are you sure you want to reject payment for ${user.team_name}?`
+          )
+        ) {
           closeDialog("paymentDialog");
           updateStatus(user.team_id, "payment", "Rejected");
         }
       }
     });
   }
-  
+
   // Allow image click to open in new tab
   const img = dialog.querySelector(".payment-image");
   if (img) {
     img.style.cursor = "pointer";
-    img.addEventListener("click", () => window.open(user.payment_proof, "_blank"));
+    img.addEventListener("click", () =>
+      window.open(user.payment_proof, "_blank")
+    );
   }
 }
 
@@ -238,28 +308,35 @@ function openPaymentDialog(user) {
 
 function openRegistrationDialog(user) {
   const members = user.members || [];
-  const leader = members.find(m => m.is_lead === 1) || members[0] || {};
-  const teamMembers = members.filter(m => m.is_lead !== 1);
+  const leader = members.find((m) => m.is_lead === 1) || members[0] || {};
+  const teamMembers = members.filter((m) => m.is_lead !== 1);
   const registrationStatusClass = getStatusClass(user.registration_status);
-  
+
   // Build members list
-  let membersList = `<li><strong>Leader:</strong> ${leader.name || "N/A"} (${leader.email || "N/A"})</li>`;
+  let membersList = `<li><strong>Leader:</strong> ${leader.name || "N/A"} (${
+    leader.email || "N/A"
+  })</li>`;
   teamMembers.forEach((member, index) => {
-    membersList += `<li><strong>Member ${index + 1}:</strong> ${member.name || "N/A"} (${member.email || "N/A"})</li>`;
+    membersList += `<li><strong>Member ${index + 1}:</strong> ${
+      member.name || "N/A"
+    } (${member.email || "N/A"})</li>`;
   });
-  
+
   // Convert URLs in abstract to clickable links
   let abstractContent = user.abstract || "No abstract provided";
   if (abstractContent !== "No abstract provided") {
     // Regular expression to find URLs
     const urlRegex = /(https?:\/\/[^\s]+)/g;
-    abstractContent = abstractContent.replace(urlRegex, '<a href="$1" target="_blank" class="abstract-link">$1</a>');
+    abstractContent = abstractContent.replace(
+      urlRegex,
+      '<a href="$1" target="_blank" class="abstract-link">$1</a>'
+    );
   }
-  
+
   const dialog = document.createElement("div");
   dialog.className = "dialog-overlay";
   dialog.id = "registrationDialog";
-  
+
   dialog.innerHTML = `
     <div class="dialog-content">
       <div class="dialog-header">
@@ -275,7 +352,9 @@ function openRegistrationDialog(user) {
           <p><strong>City:</strong> ${user.city || "N/A"}</p>
           <p><strong>Theme:</strong> ${user.theme || "N/A"}</p>
           <p><strong>Team Size:</strong> ${user.team_size || members.length}</p>
-          <p><strong>Current Status:</strong> <span class="status-badge ${registrationStatusClass}">${user.registration_status || "Pending"}</span></p>
+          <p><strong>Current Status:</strong> <span class="status-badge ${registrationStatusClass}">${
+    user.registration_status || "Pending"
+  }</span></p>
         </div>
         
         <div class="dialog-members">
@@ -294,34 +373,38 @@ function openRegistrationDialog(user) {
       </div>
       
       <div class="dialog-footer">
-        <button class="btn-dialog btn-verify" ${user.registration_status === "Completed" ? "disabled" : ""}>
+        <button class="btn-dialog btn-verify" ${
+          user.registration_status === "Completed" ? "disabled" : ""
+        }>
           ✓ Complete Registration
         </button>
-        <button class="btn-dialog btn-reject" ${user.registration_status === "Rejected" ? "disabled" : ""}>
+        <button class="btn-dialog btn-reject" ${
+          user.registration_status === "Rejected" ? "disabled" : ""
+        }>
           ✗ Reject Registration
         </button>
         <button class="btn-dialog btn-cancel">Cancel</button>
       </div>
     </div>
   `;
-  
+
   document.body.appendChild(dialog);
-  
+
   // Event listeners
   const closeBtn = dialog.querySelector(".dialog-close");
   const cancelBtn = dialog.querySelector(".btn-cancel");
   const verifyBtn = dialog.querySelector(".btn-verify");
   const rejectBtn = dialog.querySelector(".btn-reject");
-  
+
   closeBtn.addEventListener("click", () => closeDialog("registrationDialog"));
   cancelBtn.addEventListener("click", () => closeDialog("registrationDialog"));
-  
+
   dialog.addEventListener("click", (e) => {
     if (e.target.classList.contains("dialog-overlay")) {
       closeDialog("registrationDialog");
     }
   });
-  
+
   if (verifyBtn) {
     verifyBtn.addEventListener("click", () => {
       if (!verifyBtn.disabled) {
@@ -330,11 +413,15 @@ function openRegistrationDialog(user) {
       }
     });
   }
-  
+
   if (rejectBtn) {
     rejectBtn.addEventListener("click", () => {
       if (!rejectBtn.disabled) {
-        if (confirm(`Are you sure you want to reject registration for ${user.team_name}?`)) {
+        if (
+          confirm(
+            `Are you sure you want to reject registration for ${user.team_name}?`
+          )
+        ) {
           closeDialog("registrationDialog");
           updateStatus(user.team_id, "registration", "Rejected");
         }
@@ -371,16 +458,16 @@ function viewRegistration(rowBtn, teamId) {
   }
 
   // Close other open details
-  document.querySelectorAll(".details").forEach(d => d.remove());
+  document.querySelectorAll(".details").forEach((d) => d.remove());
 
-  const user = users.find(u => u.team_id === teamId);
+  const user = users.find((u) => u.team_id === teamId);
   const members = user.members || [];
-  
+
   // Find the team leader
-  const leader = members.find(m => m.is_lead === 1) || members[0] || {};
-  
+  const leader = members.find((m) => m.is_lead === 1) || members[0] || {};
+
   // Get non-leader members
-  const teamMembers = members.filter(m => m.is_lead !== 1);
+  const teamMembers = members.filter((m) => m.is_lead !== 1);
 
   // ---------- TEAM INFORMATION TABLE ----------
   let teamInfoHTML = `
@@ -436,7 +523,11 @@ function viewRegistration(rowBtn, teamId) {
           <td class="info-label">PWD Status</td>
           <td class="info-value">${leader.is_pwd ? "Yes" : "No"}</td>
           <td class="info-label">Profile Picture</td>
-          <td class="info-value">${leader.profile_pic ? `<a href="${leader.profile_pic}" target="_blank" class="view-link">View Picture</a>` : "Not uploaded"}</td>
+          <td class="info-value">${
+            leader.profile_pic
+              ? `<a href="${leader.profile_pic}" target="_blank" class="view-link">View Picture</a>`
+              : "Not uploaded"
+          }</td>
         </tr>
       </table>
     </div>
@@ -447,7 +538,7 @@ function viewRegistration(rowBtn, teamId) {
     <div class="info-section">
       <h4>Team Members (${teamMembers.length})</h4>
   `;
-  
+
   if (teamMembers.length > 0) {
     membersHTML += `
       <table class="members-table">
@@ -464,7 +555,7 @@ function viewRegistration(rowBtn, teamId) {
         </thead>
         <tbody>
     `;
-    
+
     teamMembers.forEach((member, index) => {
       membersHTML += `
         <tr>
@@ -474,11 +565,15 @@ function viewRegistration(rowBtn, teamId) {
           <td>${member.mobile || "N/A"}</td>
           <td>${member.gender || "N/A"}</td>
           <td>${member.is_pwd ? "Yes" : "No"}</td>
-          <td>${member.profile_pic ? `<a href="${member.profile_pic}" target="_blank" class="view-link">View</a>` : "N/A"}</td>
+          <td>${
+            member.profile_pic
+              ? `<a href="${member.profile_pic}" target="_blank" class="view-link">View</a>`
+              : "N/A"
+          }</td>
         </tr>
       `;
     });
-    
+
     membersHTML += `
         </tbody>
       </table>
@@ -486,16 +581,19 @@ function viewRegistration(rowBtn, teamId) {
   } else {
     membersHTML += `<p class="no-members">No additional members</p>`;
   }
-  
+
   membersHTML += `</div>`;
 
   // ---------- ABSTRACT ----------
   let abstractContent = user.abstract || "No abstract provided";
   if (abstractContent !== "No abstract provided") {
     const urlRegex = /(https?:\/\/[^\s]+)/g;
-    abstractContent = abstractContent.replace(urlRegex, '<a href="$1" target="_blank" class="abstract-link">$1</a>');
+    abstractContent = abstractContent.replace(
+      urlRegex,
+      '<a href="$1" target="_blank" class="abstract-link">$1</a>'
+    );
   }
-  
+
   let abstractHTML = `
     <div class="info-section">
       <h4>Project Abstract</h4>
@@ -508,16 +606,20 @@ function viewRegistration(rowBtn, teamId) {
   // ---------- STATUS ----------
   const paymentClass = getStatusClass(user.payment_status);
   const registrationClass = getStatusClass(user.registration_status);
-  
+
   let statusHTML = `
     <div class="info-section">
       <h4>Status</h4>
       <table class="info-table">
         <tr>
           <td class="info-label">Payment Status</td>
-          <td class="info-value"><span class="status-badge ${paymentClass}">${user.payment_status || "Pending"}</span></td>
+          <td class="info-value"><span class="status-badge ${paymentClass}">${
+    user.payment_status || "Pending"
+  }</span></td>
           <td class="info-label">Registration Status</td>
-          <td class="info-value"><span class="status-badge ${registrationClass}">${user.registration_status || "Pending"}</span></td>
+          <td class="info-value"><span class="status-badge ${registrationClass}">${
+    user.registration_status || "Pending"
+  }</span></td>
         </tr>
       </table>
     </div>
@@ -541,7 +643,6 @@ function viewRegistration(rowBtn, teamId) {
 
   row.after(detailRow);
 }
-
 
 /* ================= LOADING INDICATOR ================= */
 
@@ -569,30 +670,34 @@ function hideLoading() {
 
 function updateStatus(teamId, type, status) {
   console.log("Updating status:", { team_id: teamId, type, status });
-  
+
   // Show loading indicator
   showLoading();
-  
+
   fetch(API_POST, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ 
-      team_id: parseInt(teamId), 
-      type: type, 
-      status: status 
-    })
+    body: JSON.stringify({
+      team_id: parseInt(teamId),
+      type: type,
+      status: status,
+    }),
   })
-    .then(res => res.json())
-    .then(data => {
+    .then((res) => res.json())
+    .then((data) => {
       hideLoading();
       if (data.success) {
-        alert(`${type.charAt(0).toUpperCase() + type.slice(1)} status updated successfully!`);
+        alert(
+          `${
+            type.charAt(0).toUpperCase() + type.slice(1)
+          } status updated successfully!`
+        );
         loadUsers(); // Reload the table
       } else {
         alert(`Failed to update status: ${data.message || "Unknown error"}`);
       }
     })
-    .catch(err => {
+    .catch((err) => {
       hideLoading();
       console.error("Error updating status:", err);
       alert("Failed to update status. Please try again.");

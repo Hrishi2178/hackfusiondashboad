@@ -182,12 +182,12 @@ button {
 .btn.danger { background: #ff4d4d; color: white; }
 .btn.info { background: #4da6ff; color: white; }
 
-.details-card {
+/* .details-card {
   background: #958709;
   padding: 15px;
   border-radius: 12px;
     margin-top: 10px;
-}
+} */
 
 .details-card h3 {
   margin-bottom: 10px;
@@ -217,4 +217,54 @@ button {
     justify-content: center;
     gap: 12px;
   }
+}
+
+
+.badge-wrap {
+  margin-top: 6px;
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.team-badge {
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 600;
+  display: inline-block;
+}
+
+.badge-girl {
+  background: #fde2ff;
+  color: #8a1c7c;
+}
+
+.badge-pwd {
+  background: #e2f0ff;
+  color: #0b5ed7;
+}
+
+.team-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap; /* wraps nicely on small screens */
+}
+
+.team-name {
+  font-size: 14px;
+}
+
+.badge-wrap {
+  display: flex;
+  gap: 6px;
+}
+
+.team-badge {
+  padding: 3px 8px;
+  border-radius: 10px;
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
 }
